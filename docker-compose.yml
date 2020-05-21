@@ -1,0 +1,47 @@
+version: "2.2"
+
+services:
+  db:
+    image: postgres:latest
+    ports:
+      - ${DB_PORT}:5432
+    init: true
+    environment:
+      - POSTGRES_USER=${DB_USER}  
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+      - POSTGRES_DB=${DB_NAME}
+      - DATABASE_HOST=${DB_HOST}
+    restart: always
+    volumes:
+      - ./comment/database/:/docker-entrypoint-initdb.d/
+
+  comment-app:
+    image: golang:alpine
+    ports:
+      - 6060:6060
+    environment:
+      - PORT=6060
+      - DB_HOST=db
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}      
+      - DB_NAME=${DB_NAME}
+      - DB_PORT=${DB_PORT}
+    volumes:
+      - .:/go/src
+    working_dir: /go/src
+    command: go run comment/main.go
+    depends_on:
+      - db
+    links:
+      - db
+
+  member-app:
+    image: golang:alpine
+    ports:
+      - 7070:7070
+    environment:
+      - PORT=7070   
+    volumes:
+      - .:/go/src
+    working_dir: /go/src
+    command: go run member/main.go
